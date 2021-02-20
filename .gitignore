@@ -3,6 +3,7 @@ data/
 runs/
 ossdata/
 checkpoints/
+!ossdata/road_result/
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
