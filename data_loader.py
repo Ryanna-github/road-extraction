@@ -3,29 +3,23 @@ import cv2
 from torchvision import transforms
 import os
 
+
+# 获取给定路径下所有图片路径
+def get_file_subpaths(path, whole = True, sort = True):
+    path_prefix = path if whole else ""
+    subpaths = [path_prefix + file_name for file_name in list(os.walk(path))[0][2]]
+    if sort:
+        subpaths.sort()
+    return subpaths
+    
 # 获取图片及其标签路径（图片和标签配对）
-def read_images(root_path, train = True):
-    if train:
-        data = [root_path + "/train/" + file_name for file_name in list(os.walk(root_path+"/train/"))[0][2]]
-        labels = [root_path + "/train_labels/" + file_name for file_name in list(os.walk(root_path+"/train_labels/"))[0][2]]
-    else:
-        data = [root_path + "/val/" +file_name for file_name in list(os.walk(root_path+"/val/"))[0][2]]
-        labels = [root_path + "/val_labels/" + file_name for file_name in list(os.walk(root_path+"/val_labels/"))[0][2]]
+def read_images(root_path, train):
+    type_str = "train" if train else "val"
+    data = [root_path + "/" + type_str + "/" + file_name for file_name in list(os.walk(root_path+"/" + type_str + "/"))[0][2]]
+    file_names_order = [path.split("/")[-1][:-1] for path in data]
+    labels = [root_path + "/" + type_str + "_labels/" + file_name for file_name in file_names_order]
     return data, labels
 
-# 获取给定路径下所有图片绝对路径
-def get_path_img_info(path, get_array = False, whole = True):
-    if not whole:
-        subpaths = [file_name for file_name in list(os.walk(path))[0][2]] 
-    else:
-        subpaths = [path + file_name for file_name in list(os.walk(path))[0][2]] 
-    if get_array:
-        whole_paths = [path + file_name for file_name in list(os.walk(path))[0][2]] 
-        imgs = [cv2.imread(t) for t in whole_paths]
-        return subpaths, imgs
-    else:
-        return subpaths
-    
 # 原图 0-255，tensor 中 0-1
 def change_to_tensor(img, label, tensor_size, output_size):
     img = cv2.imread(img)
