@@ -1,8 +1,12 @@
 from torch.utils.data import Dataset
+from PIL import Image
 import cv2
 from torchvision import transforms
 import os
 
+
+classes = ['background', 'road']
+colormap = [[0 , 0, 0], [255, 255, 255]]
 
 # 获取给定路径下所有图片路径
 def get_file_subpaths(path, whole = True, sort = True):
