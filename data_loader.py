@@ -16,19 +16,18 @@ def get_file_subpaths(path, whole = True, sort = True):
     return subpaths
     
 class RoadDataset(Dataset):
-    def __init__(self, root_path, input_size, output_size):
+    def __init__(self, root_path, input_size, output_size, train = True):
         super(RoadDataset, self).__init__()
         self.input_size = input_size
         self.output_size = output_size
         self.root_path = root_path
         
         # absolute paths
-        self.data_list_train, self.label_list_train = self.read_images(train = True)
-        self.data_list_val, self.label_list_val = self.read_images(train = False)
-        self.len_train, self.len_val = len(self.data_list_train), len(self.data_list_val)
+        self.data_list, self.label_list = self.read_images(train = train)
+        self.len = len(self.data_list)
         
         # text out
-        print('Data set:\nTrain: {} pairs\nValidation: {} pairs'.format(self.len_train, self.len_val))
+        print('Train set: {}\nCount: {} pairs'.format(train, self.len))
     
     # get paths (images with corresponding labels)
     def read_images(self, train):
@@ -41,12 +40,11 @@ class RoadDataset(Dataset):
     def __getitem__(self, idx):
         img = self.data_list[idx]
         label = self.label_list[idx]
-        img, label = self.change_to_tensor(img, label, self.input_size, self.output_size)
+        img, label = self.change_to_tensor(img, label)
         return img, label
     
     def __len__(self):
-        return {"train_len": len(self.data_list_train),
-               "val_len": len(self.data_list_val)}
+        return self.len
     
     # 0-255 to 0-1 in tensors
     def change_to_tensor(self, img, label):
@@ -56,7 +54,6 @@ class RoadDataset(Dataset):
         for i, cm in enumerate(colormap):
             label[(label[:, :, 0] == cm[0]) & (label[:, :, 1] == cm[1]) & (label[:, :, 2] == cm[2])] = i * 255
         label = label[:, :, 0] 
-
         transform_data = transforms.Compose([transforms.Resize([self.input_size, self.input_size], 0), transforms.ToTensor(),])
         transform_label = transforms.Compose([transforms.Resize([self.output_size, self.output_size], 0), transforms.ToTensor(),])
         img_tensor, label_tensor = transform_data(Image.fromarray(img)), transform_label(Image.fromarray(label))
