@@ -2,30 +2,24 @@
 
 ## 使用数据
 
-massachusetts-roads-dataset 数据集中表现优良的部分数据，将图片切分为四部分，最终训练集共 92\*4 张图片，验证集（未经筛选）共 14\*4张图片，测试集（未经筛选）共 49\*4 张图片
+massachusetts-roads-dataset 数据集中表现优良的部分数据，将图片切分为 16 部分，最终训练集共 441\*16 张图片，验证集（未经筛选）共 14\*16张图片，测试集（未经筛选）共 49\*16 张图片
 
 
 
-## 模型尝试
+## 当前结果
 
-### U-Net
+- LinkNet 34（红色）
+- D-LinkNet 34（蓝色）
 
-测试数据
+![](predict_result/linknet_dlinknet.PNG)
 
-![](/predict_result/unet_img.jpg)
+1. 已经可以提取出道路的主要部分，但是对于没有道路的地区，会提取出很多错误信息。
+2. 优化器很重要，Adam 结果比较好
 
-![](/predict_result/unet_lbl.jpg)
 
-1. 使用 SGD 结果
 
-   1. 训练 7 个 epoch (每个 epoch 最终 loss 都完全相同，手动停止)
-   2. threshold = 0.38 时结果如下
+## 下一步计划
 
-   ![](/predict_result/unet_sgd_038.jpg)
-
-2. 使用 RMSprop 结果
-
-   1. 训练 9 个 epoch（每个 epoch loss 有微小差别，但 tensorboard 中观察结果很差，手动停止）
-   2. threshold = 0.29 时结果如下
-
-![](/predict_result/unet_rms_029.jpg)
+- 回查验证集如何影响网络参数
+- 重新调整损失函数
+- 整合代码，增强结构性
