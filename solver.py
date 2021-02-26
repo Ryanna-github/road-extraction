@@ -1,8 +1,9 @@
 import torch
 from torch import nn
 from data_loader import *
+from loss import *
 
-class Extractor():
+class Solver():
     
     # initialize basic info
     def __init__(self, device, net, train_dataset, val_dataset, loss, lr, optimizer, scheduler):
@@ -36,23 +37,19 @@ class Extractor():
     # evaluate the net using validation dataset
     def eval_net(self):
         net.eval()
-        
-        mask_type = torch.float32 if net.n_classes == 1 else torch.long
-        n_val = len(loader)
+        self.eval_loss = dice_loss()
         tot = 0
         for batch in self.val_loader:
             imgs = batch[0].to(self.device, dtype = torch.float32)
             true_masks = batch[1].to(self.device, dtype = torch.float32)
-
             # no grad traced, speed up
             with torch.no_grad():
                 pred_masks = net(imgs)
             pred = torch.sigmoid(pred_masks)
             pred = (pred > 0.5).float()
-            tot += dice_coeff(pred, true_masks).item()
+            tot += self.eval_loss(pred, true_masks).item()
         net.train()
-        return tot / n_val
-            return 0
+        return tot / self.n_val
     
     def save_net(self, dir_checkpoint, preffix):
         try:
@@ -79,10 +76,12 @@ class Extractor():
                     pred_masks = net(imgs)
                     loss = self.loss(pred_masks, true_masks)
                     epoch_loss += loss.item()
+                    self.optimize(clip = True)
+                    
+                    # record
                     writer.add_scalar('Loss/train', loss.item(), global_step)
                     pbar.set_postfix(**{'loss (batch)': loss.item()})
-                    self.optimize(clip = True)
-
+                    
                     # update progress bar
                     pbar.update(imgs.shape[0])
                     global_step += 1
