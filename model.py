@@ -62,8 +62,7 @@ class Up(nn.Module):
         diffY = x2.size()[2] - x1.size()[2]
         diffX = x2.size()[3] - x1.size()[3]
 
-#         x1 = F.pad(x1, [diffX // 2, diffX - diffX // 2,
-#                         diffY // 2, diffY - diffY // 2])
+#         x1 = F.pad(x1, [diffX // 2, diffX - diffX // 2, diffY // 2, diffY - diffY // 2])
         x2 = x2[:,:, (diffY // 2): -(diffY - diffY // 2), (diffY // 2): -(diffX - diffX // 2)]
         x = torch.cat([x2, x1], dim=1)
         return self.conv(x)
@@ -135,7 +134,7 @@ class LinkNet34(nn.Module):
         self.finalrelu1 = self.nonlinearity
         self.finalconv2 = nn.Conv2d(32, 32, 3)
         self.finalrelu2 = self.nonlinearity
-        self.finalconv3 = nn.Conv2d(32, num_classes, 2, padding=1)
+        self.finalconv3 = nn.Conv2d(32, self.n_classes, 2, padding=1)
 
     def forward(self, x):
         # Encoder
@@ -192,3 +191,12 @@ class DecoderBlock(nn.Module):
     
     
 # ================================= Model 3: D-LinkNet =========================================
+
+
+
+
+
+
+
+
+

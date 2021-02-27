@@ -44,6 +44,7 @@ class DiceCoeff(Function):
 
         t = (2 * self.inter.float() + eps) / self.union.float()
         return t
+    
 
 class dice_loss(nn.Module):
     def __init__(self):

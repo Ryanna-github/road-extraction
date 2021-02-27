@@ -2,17 +2,20 @@ import torch
 from torch import nn
 from data_loader import *
 from loss import *
+from torch.utils.data import Dataset, DataLoader
+from torch.utils.tensorboard import SummaryWriter
+from tqdm import tqdm
 
 class Solver():
     
     # initialize basic info
-    def __init__(self, device, net, train_dataset, val_dataset, loss, lr, optimizer, scheduler):
-        super(Extractor).__init__()
-        self.loss = loss()
+    def __init__(self, device, net, train_dataset, val_dataset, loss, lr, batch_size, optimizer, scheduler):
+        self.criterion = loss
         self.device = device
         self.net = net.to(self.device)
         self.optimizer = optimizer
         self.scheduler = scheduler
+        self.batch_size = batch_size
         self.lr = lr
         self.train_dataset, self.val_dataset = train_dataset, val_dataset
         self.n_train, self.n_val = len(self.train_dataset), len(self.val_dataset)
@@ -20,86 +23,85 @@ class Solver():
         self.train_loader = DataLoader(self.train_dataset, self.batch_size, shuffle = True)
         self.val_loader = DataLoader(self.val_dataset, self.batch_size, shuffle = True)
         
-    def optimize(self, clip = True):
+    def optimize(self, pred_masks, true_masks, clip = True):
+        cur_loss = self.criterion(pred_masks, true_masks)
         self.optimizer.zero_grad()
-        self.loss.backward()
+        cur_loss.backward()
         if clip:
-            nn.utils.clip_grad_value_(net.parameters(), 1)
+            nn.utils.clip_grad_value_(self.net.parameters(), 1)
         self.optimizer.step()
+        return cur_loss
+        
     
     # record parameter change in tensorboard
     def record_para(self, global_step):
-        for tag, value in net.named_parameters():
+        for tag, value in self.net.named_parameters():
             tag = tag.replace('.', '/')
-            writer.add_histogram('weights/' + tag, value.data.cpu().numpy(), global_step)
-            writer.add_histogram('grads/' + tag, value.grad.data.cpu().numpy(), global_step)
+            self.writer.add_histogram('weights/' + tag, value.data.cpu().numpy(), global_step)
+            self.writer.add_histogram('grads/' + tag, value.grad.data.cpu().numpy(), global_step)
         
     # evaluate the net using validation dataset
     def eval_net(self):
-        net.eval()
-        self.eval_loss = dice_loss()
+        self.net.eval()
+        self.eval_criterion = dice_loss()
         tot = 0
         for batch in self.val_loader:
             imgs = batch[0].to(self.device, dtype = torch.float32)
             true_masks = batch[1].to(self.device, dtype = torch.float32)
             # no grad traced, speed up
             with torch.no_grad():
-                pred_masks = net(imgs)
+                pred_masks = self.net(imgs)
             pred = torch.sigmoid(pred_masks)
             pred = (pred > 0.5).float()
-            tot += self.eval_loss(pred, true_masks).item()
-        net.train()
+            tot += self.eval_criterion(pred, true_masks).item()
+        self.net.train()
         return tot / self.n_val
     
-    def save_net(self, dir_checkpoint, preffix):
+    def save_net(self, epoch, dir_checkpoint, preffix):
         try:
             os.mkdir(dir_checkpoint)
         except OSError:
             pass
-        torch.save(net.state_dict(), dir_checkpoint + f'{preffix}_epoch{epoch + 1}.pth')
+        torch.save(self.net.state_dict(), dir_checkpoint + f'{preffix}_epoch{epoch + 1}.pth')
         if os.path.exists(dir_checkpoint + f'{preffix}_epoch{epoch - 4}.pth') & (epoch - 4)//10 != 0:
             os.remove(dir_checkpoint + f'{preffix}_epoch{epoch - 4}.pth')
     
     # training progress...
-    def train(self, epochs, batch_size, save_cp = True, dir_checkpoint = 'checkpoints/', prefix = ''):
-        self.batch_size = batch_size
+    def train(self, epochs, save_cp = True, dir_checkpoint = 'checkpoints/', prefix = ''):
         self.writer = SummaryWriter(comment = f'LR_{self.lr}_BS_{self.batch_size}')
-        criterion = nn.BCEWithLogitsLoss()
         global_step = 0
         for epoch in range(epochs):
-            net.train()
+            self.net.train()
             epoch_loss = 0
             with tqdm(total = self.n_train, desc=f'Epoch {epoch + 1}/{epochs}', unit='img') as pbar:
                 for batch in self.train_loader:
                     imgs = batch[0].to(self.device, dtype = torch.float32)
                     true_masks = batch[1].to(self.device, dtype = torch.float32) # 01
-                    pred_masks = net(imgs)
-                    loss = self.loss(pred_masks, true_masks)
-                    epoch_loss += loss.item()
-                    self.optimize(clip = True)
+                    pred_masks = self.net(imgs)
+                    cur_loss = self.optimize(pred_masks, true_masks, clip = True)
+                    
+                    epoch_loss += cur_loss.item()
                     
                     # record
-                    writer.add_scalar('Loss/train', loss.item(), global_step)
-                    pbar.set_postfix(**{'loss (batch)': loss.item()})
+                    self.writer.add_scalar('Loss/train', cur_loss.item(), global_step)
+                    pbar.set_postfix(**{'loss (batch)': cur_loss.item()})
                     
                     # update progress bar
                     pbar.update(imgs.shape[0])
                     global_step += 1
 
                     # record in tensorboard
-                    if global_step % (self.n_train // (10 * batch_size) + 1) == 0:
-                        self.record_para()
+                    if global_step % (self.n_train // (10 * self.batch_size) + 1) == 0:
+                        self.record_para(global_step)
                         val_score = self.eval_net()
-                        scheduler.step(val_score)
+                        self.scheduler.step(val_score)
 
-                        writer.add_scalar('Dice/test', val_score, global_step)
-                        writer.add_scalar('learning_rate', optimizer.param_groups[0]['lr'], global_step)
-                        writer.add_images('images', imgs, global_step)
-                        writer.add_images('masks/true', true_masks, global_step)
-                        writer.add_images('masks/pred_0.5', torch.sigmoid(masks_pred) > 0.5, global_step)
+                        self.writer.add_scalar('Dice/test', val_score, global_step)
+                        self.writer.add_scalar('learning_rate', self.optimizer.param_groups[0]['lr'], global_step)
+                        self.writer.add_images('images', imgs, global_step)
+                        self.writer.add_images('masks/true', true_masks, global_step)
+                        self.writer.add_images('masks/pred_0.5', torch.sigmoid(pred_masks) > 0.5, global_step)
             # save the net after each epoch
             if save_cp:
-                self.save_net(dir_checkpoint, preffix)
+                self.save_net(epoch, dir_checkpoint, prefix)
         self.writer.close()
-        
-        
