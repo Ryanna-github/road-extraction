@@ -1,0 +1,1 @@
+Time used for U-Net: -23061.05268931389
