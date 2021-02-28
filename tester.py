@@ -27,3 +27,11 @@ class Tester():
     
     def show_one(self):
         plt.imshow(self.pred)
+        
+    # get dice & IoU scores for all imgs in test_paths
+    def test_score(self, img_paths, lbl_paths):
+        self.dice_score = []
+        self.iou_score = []
+        for i, (img, lbl) in enumerate(zip(img_paths, lbl_paths)):
+            pass
+        
