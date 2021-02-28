@@ -5,14 +5,16 @@ from loss import *
 from torch.utils.data import Dataset, DataLoader
 from torch.utils.tensorboard import SummaryWriter
 from tqdm import tqdm
+import time
 
 class Solver():
     
     # initialize basic info
-    def __init__(self, device, net, train_dataset, val_dataset, loss, lr, batch_size, optimizer, scheduler):
+    def __init__(self, device, net, train_dataset, val_dataset, loss, lr, batch_size, optimizer, scheduler, net_name):
         self.criterion = loss
         self.device = device
         self.net = net.to(self.device)
+        self.net_name = net_name
         self.optimizer = optimizer
         self.scheduler = scheduler
         self.batch_size = batch_size
@@ -22,6 +24,8 @@ class Solver():
         
         self.train_loader = DataLoader(self.train_dataset, self.batch_size, shuffle = True)
         self.val_loader = DataLoader(self.val_dataset, self.batch_size, shuffle = True)
+        
+        print("Net {} initialized.".format(self.net_name))
         
     def optimize(self, pred_masks, true_masks, clip = True):
         cur_loss = self.criterion(pred_masks, true_masks)
@@ -65,9 +69,15 @@ class Solver():
         torch.save(self.net.state_dict(), dir_checkpoint + f'{preffix}_epoch{epoch + 1}.pth')
         if os.path.exists(dir_checkpoint + f'{preffix}_epoch{epoch - 4}.pth') & (epoch - 4)//10 != 0:
             os.remove(dir_checkpoint + f'{preffix}_epoch{epoch - 4}.pth')
+            
+    def write_info(self, message = '', file_path = 'train_info.txt'):
+        doc = open(file_path, 'a+')
+        print(message, file = doc)
+        doc.close()
     
     # training progress...
     def train(self, epochs, save_cp = True, dir_checkpoint = 'checkpoints/', prefix = ''):
+        self.start_time = time.time()
         self.writer = SummaryWriter(comment = f'LR_{self.lr}_BS_{self.batch_size}')
         global_step = 0
         for epoch in range(epochs):
@@ -105,3 +115,6 @@ class Solver():
             if save_cp:
                 self.save_net(epoch, dir_checkpoint, prefix)
         self.writer.close()
+        self.end_time = time.time()
+        self.write_info("Time used for {}: {}".format(self.net_name, self.start_time - self.end_time))
+    

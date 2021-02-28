@@ -2,6 +2,8 @@ import numpy as np
 import torch
 import matplotlib.pyplot as plt
 
+from loss import *
+
 TEST_SAVE_PATH = '/home/renyan/road-extraction/predict_result/'
 
 class Tester():

@@ -76,7 +76,7 @@ class OutConv(nn.Module):
         return self.conv(x)
 
 class UNet(nn.Module):
-    def __init__(self, n_channels, n_classes, bilinear=True):
+    def __init__(self, n_channels = 3, n_classes = 1, bilinear=True):
         super(UNet, self).__init__()
         self.n_channels = n_channels # 图片的通道数（最初输入）
         self.n_classes = n_classes # 最终类别墅（最终输出）
