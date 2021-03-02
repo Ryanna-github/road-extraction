@@ -116,5 +116,5 @@ class Solver():
                 self.save_net(epoch, dir_checkpoint, prefix)
         self.writer.close()
         self.end_time = time.time()
-        self.write_info("Time used for {}: {}".format(self.net_name, self.start_time - self.end_time))
+        self.write_info("Time used for {}: {}".format(self.net_name, self.end_time - self.start_time))
     

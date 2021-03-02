@@ -15,23 +15,23 @@ def get_file_subpaths(path, whole = True, sort = True):
         subpaths.sort()
     return subpaths
     
+# get train/val/test dataset
 class RoadDataset(Dataset):
-    def __init__(self, root_path, input_size, output_size, train = True):
+    def __init__(self, root_path, input_size, output_size, data_class = 'train'):
         super(RoadDataset, self).__init__()
         self.input_size = input_size
         self.output_size = output_size
         self.root_path = root_path
         
         # absolute paths
-        self.data_list, self.label_list = self.read_images(train = train)
+        self.data_list, self.label_list = self.read_images(type_str = data_class)
         self.len = len(self.data_list)
         
         # text out
-        print('Train set: {}\nCount: {} pairs'.format(train, self.len))
+        print('{} dataset set: {} pairs'.format(data_class, self.len))
     
     # get paths (images with corresponding labels)
-    def read_images(self, train):
-        type_str = "train" if train else "val"
+    def read_images(self, type_str):
         data = [self.root_path + "/" + type_str + "/" + file_name for file_name in list(os.walk(self.root_path+"/" + type_str + "/"))[0][2]]
         file_names_order = [path.split("/")[-1][:-1] for path in data]
         labels = [self.root_path + "/" + type_str + "_labels/" + file_name for file_name in file_names_order]
