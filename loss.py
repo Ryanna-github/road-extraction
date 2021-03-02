@@ -45,7 +45,6 @@ class DiceCoeff(Function):
         t = (2 * self.inter.float() + eps) / self.union.float()
         return t
     
-
 class dice_loss(nn.Module):
     def __init__(self):
         super(dice_loss, self).__init__()
@@ -55,4 +54,15 @@ class dice_loss(nn.Module):
         for i, c in enumerate(zip(input, target)):
             s = s + (1-DiceCoeff().forward(c[0], c[1]))
         return s / (i + 1)
-        
+
+# ================================== IoU Score ===================================
+def get_iou(input, target):
+    inter = torch.dot(input.view(-1), target.view(-1))
+    union = abs(input.view(-1) - target.view(-1)).sum()
+    t = inter.float() / union.float()
+    return t
+
+
+
+
+
