@@ -1,5 +1,6 @@
 # Customized
 data/
+predict_result/test_result/
 runs/
 ossdata/m*
 checkpoints/
