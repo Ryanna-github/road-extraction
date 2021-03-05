@@ -1,1 +1,10 @@
-Time used for U-Net: -23061.05268931389
+Infomation recorded in 2021-03-04-10_30_45 of LinkNet34
+	time used: 26386.93558382988                    
+	epoch number: 20
+	current lr: 0.001
+
+Infomation recorded in 2021-03-04-23_13_22 of DLinkNet34
+	time used: 28975.930395126343                    
+	epoch number: 20
+	current lr: 0.001
+

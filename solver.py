@@ -2,6 +2,7 @@ import torch
 from torch import nn
 from data_loader import *
 from loss import *
+from tester import *
 from torch.utils.data import Dataset, DataLoader
 from torch.utils.tensorboard import SummaryWriter
 from tqdm import tqdm
@@ -116,5 +117,8 @@ class Solver():
                 self.save_net(epoch, dir_checkpoint, prefix)
         self.writer.close()
         self.end_time = time.time()
-        self.write_info("Time used for {}: {}".format(self.net_name, self.end_time - self.start_time))
+        self.elapse_time = self.end_time - self.start_time
+        self.log_time = time.strftime("%Y-%m-%d-%H_%M_%S", time.localtime())
+        self.write_info("Infomation recorded in {} of {}\n\ttime used: {}\
+                    \n\tepoch number: {}\n\tcurrent lr: {}\n".format(self.log_time, self.net_name, self.elapse_time, epochs, self.lr))
     

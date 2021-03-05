@@ -4,6 +4,7 @@ predict_result/test_result/
 runs/
 ossdata/m*
 checkpoints/
+*.pickle
 
 
 # Byte-compiled / optimized / DLL files
