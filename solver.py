@@ -106,6 +106,7 @@ class Solver():
                         self.record_para(global_step)
                         val_score = self.eval_net()
                         self.scheduler.step(val_score)
+#                         self.scheduler.step() # if ReduceLROnPlateau 则需要传入参数 val_score
 
                         self.writer.add_scalar('Dice/test', val_score, global_step)
                         self.writer.add_scalar('learning_rate', self.optimizer.param_groups[0]['lr'], global_step)

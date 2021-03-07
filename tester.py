@@ -65,7 +65,7 @@ class Tester():
             self.combine = torch.add(img_pred_out.cuda(), change_tensor_to_plot(self.pred, to_numpy = False))
             plt.imshow(change_tensor_to_plot(self.combine))
     
-    def show_idx(self, idx, combine = False):
+    def test_idx(self, idx, combine = False):
         self.img = self.test_dataset[idx][0].unsqueeze(dim = 0).to(self.device)
         self.lbl = self.test_dataset[idx][1].unsqueeze(dim = 0).to(self.device)
         self.pred = self.net(self.img.to(self.device))

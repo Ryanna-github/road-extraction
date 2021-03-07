@@ -8,3 +8,8 @@ Infomation recorded in 2021-03-04-23_13_22 of DLinkNet34
 	epoch number: 20
 	current lr: 0.001
 
+Infomation recorded in 2021-03-05-18_26_28 of DLinkNet34
+	time used: 28668.6550385952                    
+	epoch number: 20
+	current lr: 0.001
+
