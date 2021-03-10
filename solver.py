@@ -102,11 +102,13 @@ class Solver():
                     global_step += 1
 
                     # record in tensorboard
+                    # self.n_train // (10*self.batch_size): the number of 10 batches included in training dataset
+                    # global_step % (self.n_train // (10 * self.batch_size) + 1) == 0: every 10*self.batch_size record once
                     if global_step % (self.n_train // (10 * self.batch_size) + 1) == 0:
                         self.record_para(global_step)
                         val_score = self.eval_net()
-                        self.scheduler.step(val_score)
-#                         self.scheduler.step() # if ReduceLROnPlateau 则需要传入参数 val_score
+#                         self.scheduler.step(val_score)
+                        self.scheduler.step() # if ReduceLROnPlateau 则需要传入参数 val_score
 
                         self.writer.add_scalar('Dice/test', val_score, global_step)
                         self.writer.add_scalar('learning_rate', self.optimizer.param_groups[0]['lr'], global_step)
