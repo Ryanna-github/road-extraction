@@ -23,3 +23,13 @@ Infomation recorded in 2021-03-08-09_32_08 of Re-LinkNet34
 	epoch number: 20
 	current lr: 0.0002
 
+Infomation recorded in 2021-03-10-15_07_51 of DLinkNet34
+	time used: 26589.586638212204                    
+	epoch number: 20
+	current lr: 0.0002
+
+Infomation recorded in 2021-03-10-16_46_27 of DUNet
+	time used: 28757.720583677292                    
+	epoch number: 20
+	current lr: 0.0002
+
