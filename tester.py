@@ -72,15 +72,15 @@ class Tester():
         self.pred = (torch.sigmoid(self.pred).squeeze(0) > self.threshold).type(torch.float32)
         self.show_one(combine)
 
-    
+    # save prediction images of test dataset
     def save(self, subfolder = 'test_result/'):
         if not os.path.exists(self.save_path + subfolder):
             os.makedirs(self.save_path + subfolder)
             print("Build folder of {}".format(self.save_path + subfolder))
-        for i, pred in enumerate(tqdm(self.pred)):
-            each_file_name = self.test_dataset.datalist[i].split("/")[-1].split(".")[0] + '.png'
+        for i, pred in enumerate(tqdm(self.pred_list)):
+            each_file_name = self.test_dataset.data_list[i].split("/")[-1].split(".")[0] + '.png'
             full_file_path = self.save_path + subfolder + each_file_name
-            cv2.imwrite(full_file_path, pred*255)
+            cv2.imwrite(full_file_path, change_tensor_to_plot(pred)*255)
             
         
     # get dice & IoU scores for all imgs in test dataset
@@ -99,7 +99,7 @@ class Tester():
         if save:
             self.save()
             
-        
+    # abandon for now...(low efficiency)
     def get_threshold_best(self, lowest = 0.45, highest = 0.55, stride = 0.01):
         candidates = list(np.arange(lowest, highest, stride))
         c_dice_score, c_iou_score = [], []
