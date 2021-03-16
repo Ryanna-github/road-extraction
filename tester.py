@@ -6,6 +6,7 @@ from torch.utils.data import DataLoader
 from tqdm import tqdm
 import os
 import cv2
+import time
 
 from loss import *
 from utils import *
@@ -98,6 +99,18 @@ class Tester():
             print("current threshold: {}\nmean dice: {}\nmean iou: {}".format(self.threshold, np.mean(self.dice_score), np.mean(self.iou_score)))
         if save:
             self.save()
+    
+    def write_info(self, message = '', file_path = 'score_info.txt'):
+        doc = open(file_path, 'a+')
+        content = "{}\n\trecord time: {}\n\tcurrent threshold: {} \
+                \n\tmean dice: {}\n\tmean iou: {}\n\n".format(message,
+                                            time.strftime("%Y-%m-%d-%H_%M_%S", time.localtime()), 
+                                            self.threshold, 
+                                            np.mean(self.dice_score), 
+                                            np.mean(self.iou_score))
+        print("Test results saved in {}".format(file_path))
+        print(content, file = doc)
+        doc.close()
             
     # abandon for now...(low efficiency)
     def get_threshold_best(self, lowest = 0.45, highest = 0.55, stride = 0.01):
