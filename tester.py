@@ -22,12 +22,19 @@ class Tester():
         self.save_path = save_path
         self.net = net.to(self.device)
         self.net.load_state_dict(torch.load(dir_checkpoint + dir_stat))
+        self.net.eval()
         self.test_dataset = test_dataset
         self.test_loader = test_loader = DataLoader(self.test_dataset, 1, shuffle = False)
         self.threshold = threshold
         self.n_test = len(test_dataset)
         self.log_path = log_path
+        self.test_dict = pd.DataFrame({"img_name": [t.split("/")[-1].split(".")[0] for t in test_dataset.data_list],
+                          "idx": np.arange(len(test_dataset))})
         print("Tester with net para in {} is ready \n(threshold = {}, {} pairs in test dataset)".format(dir_stat, self.threshold, self.n_test))
+        
+    def save_test_idx(self, file_name = "test_idx"):
+        self.test_dict.to_csv("/home/renyan/road-extraction/predict_result/test_result/{}.csv".format(file_name), header = True, index=False)
+        print("Test dict saved to {}".format(file_name))
     
     # change threshold
     def set_threshold(self, new_threshold):
@@ -38,8 +45,12 @@ class Tester():
     def test_one(self, img, lbl, show = True, combine = False, verbose = False, save_name = None):
         self.img = img.to(self.device)
         self.lbl = lbl.to(self.device)
-        self.pred = self.net(self.img.to(self.device))
-        self.pred = (torch.sigmoid(self.pred).squeeze(0) > self.threshold).type(torch.float32)
+        try:
+            probs, self.pred = self.net(self.img.to(self.device), self.lbl.to(self.device))
+            self.pred = self.pred.float().squeeze(0)
+        except:
+            self.pred = self.net(self.img.to(self.device))
+            self.pred = (torch.sigmoid(self.pred).squeeze(0) > self.threshold).type(torch.float32)
         if show:
             self.show_one(combine)
         if verbose:
@@ -69,8 +80,13 @@ class Tester():
     def test_idx(self, idx, combine = False):
         self.img = self.test_dataset[idx][0].unsqueeze(dim = 0).to(self.device)
         self.lbl = self.test_dataset[idx][1].unsqueeze(dim = 0).to(self.device)
-        self.pred = self.net(self.img.to(self.device))
-        self.pred = (torch.sigmoid(self.pred).squeeze(0) > self.threshold).type(torch.float32)
+        try:
+            probs, self.pred = self.net(self.img.to(self.device), self.lbl.to(self.device))
+            self.pred = self.pred.float().squeeze(0)
+        except:
+            self.pred = self.net(self.img.to(self.device))
+            self.pred = (torch.sigmoid(self.pred).squeeze(0) > self.threshold).type(torch.float32)
+            
         self.show_one(combine)
 
     # save prediction images of test dataset
@@ -96,7 +112,7 @@ class Tester():
             self.iou_score.append(get_iou(pred.squeeze(), lbl.squeeze()).item())
             self.dice_score.append(get_dice(pred.squeeze(), lbl.squeeze()).item())
         if verbose:
-            print("current threshold: {}\nmean dice: {}\nmean iou: {}".format(self.threshold, np.mean(self.dice_score), np.mean(self.iou_score)))
+            print("current threshold: {}\nmean dice: {}\nmean iou: {}".format(self.threshold, np.nanmean(self.dice_score), np.nanmean(self.iou_score)))
         if save:
             self.save()
     

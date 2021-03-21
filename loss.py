@@ -56,17 +56,17 @@ class dice_loss(nn.Module):
         return s / (i + 1)
 
 # get dice coeffient directly (without reference to gradient)
-def get_dice(input, target, eps = 0):
+def get_dice(input, target, eps = 0.01):
     inter = torch.dot(input.view(-1), target.view(-1))
     union = torch.sum(input) + torch.sum(target) + eps
-    t = (2 * inter.float() + eps) / union.float()
+    t = (2 * inter.float() + eps) / (union.float() + eps)
     return t
 
 # ================================== IoU Score ===================================
-def get_iou(input, target, eps = 0):
+def get_iou(input, target, eps = 0.01):
     inter = torch.dot(input.view(-1), target.view(-1))
     union = (input.type(torch.int).view(-1) | target.type(torch.int).view(-1)).sum()
-    t = inter.float() / union.float()
+    t = (inter.float() + eps) / (union.float() + eps)
     return t
 
 

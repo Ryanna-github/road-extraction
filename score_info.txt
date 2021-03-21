@@ -109,4 +109,8 @@ D-Linknet34
 	mean dice: 0.5893428342709628
 	mean iou: 0.4676450522539774
 
-
+FarSeg
+   record time: 2021-03-21
+   current threshold: 0.5
+   mean dice: 0.661
+   mean iou: 0.527

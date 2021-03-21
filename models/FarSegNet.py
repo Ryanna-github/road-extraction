@@ -6,6 +6,7 @@ from torch.autograd import Function
 from torchsummary import summary
 import numpy as np
 from functools import partial
+import torchvision
 from torchvision import models
 
 class Decoder(nn.Module):
