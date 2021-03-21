@@ -5,6 +5,7 @@ runs/
 ossdata/m*
 checkpoints/
 *.pickle
+pickle_objects/
 
 
 # Byte-compiled / optimized / DLL files
