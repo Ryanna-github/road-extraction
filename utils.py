@@ -37,6 +37,7 @@ def change_tensor_to_plot(ts, to_numpy = True):
     else:
         return res.permute(2, 0, 1)
 
+
 # improve test results of model
 def get_improved_result(ts, threshold = 500):
     ts = change_tensor_to_plot(ts, to_numpy = True)
