@@ -6,6 +6,7 @@ ossdata/m*
 checkpoints/
 *.pickle
 pickle_objects/
+predict_result/mid_report/
 
 
 # Byte-compiled / optimized / DLL files

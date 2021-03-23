@@ -3,6 +3,7 @@ from PIL import Image
 import cv2
 from torchvision import transforms
 import os
+import random
 
 classes = ['background', 'road']
 colormap = [[0 , 0, 0], [255, 255, 255]]
@@ -17,22 +18,26 @@ def get_file_subpaths(path, whole = True, sort = True):
     
 # get train/val/test dataset
 class RoadDataset(Dataset):
-    def __init__(self, root_path, input_size, output_size, data_class = 'train'):
+    def __init__(self, root_path, input_size, output_size, data_class = 'train', sample_ratio = None, seeds = 999):
         super(RoadDataset, self).__init__()
         self.input_size = input_size
         self.output_size = output_size
         self.root_path = root_path
         
         # absolute paths
-        self.data_list, self.label_list = self.read_images(type_str = data_class)
+        self.data_list, self.label_list = self.read_images(type_str = data_class, sample_ratio = sample_ratio, seeds = seeds)
         self.len = len(self.data_list)
         
         # text out
-        print('{} dataset set: {} pairs'.format(data_class, self.len))
+        print('{} dataset set: {} pairs with sample ratio {}'.format(data_class, self.len, sample_ratio))
     
     # get paths (images with corresponding labels)
-    def read_images(self, type_str):
+    def read_images(self, type_str, sample_ratio = None, seeds = 999):
         data = [self.root_path + "/" + type_str + "/" + file_name for file_name in list(os.walk(self.root_path+"/" + type_str + "/"))[0][2]]
+        if sample_ratio is not None:
+            random.seed(999)
+            idx_sample = random.sample(range(len(data)), int(len(data)*sample_ratio))
+            data = [data[i] for i in idx_sample]
         file_names_order = [path.split("/")[-1][:-1] for path in data]
         labels = [self.root_path + "/" + type_str + "_labels/" + file_name for file_name in file_names_order]
         return data, labels
