@@ -2,6 +2,7 @@
 data/
 predict_result/test_result/
 runs/
+runs2/
 ossdata/m*
 checkpoints/
 *.pickle

@@ -23,7 +23,7 @@ class dice_bce_loss(nn.Module):
         return score.mean()
 
     def soft_dice_loss(self, y_pred, y_true):
-        loss = 1 - self.soft_dice_coeff(y_pred, y_true)
+        loss = 0.2 * self.bce_loss() + 0.8 * (1 - self.soft_dice_coeff(y_pred, y_true))
         return loss
         
     def __call__(self, y_pred, y_true):
