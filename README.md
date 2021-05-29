@@ -1,6 +1,6 @@
 # 道路提取模型探索
 
-> 现有文件结构
+> 文件结构
 >
 > solver.py：模型主要框架，训练，验证，优化器迭代等操作
 >
@@ -16,55 +16,150 @@
 
 
 
-## 使用数据
+## 数据
 
-- 训练：massachusetts-roads-dataset 数据集中表现优良的部分数据，将图片切分为 16 部分，最终训练集共 441\*16 张图片，验证集（未经筛选）共 14\*16张图片，测试集（未经筛选）共 49\*16 张图片
-- 测试：高分一号云南地区图像，尝试使用样例在文件 `2021-03-07_gf_newdata.ipynb`
-
-
-
-## 当前代表性结果
-
-> 由于直接使用 dilated 后的数据预测结果会比真实结果粗很多，故使用 dilated 数据先训练 20 个epoch 后，再在现有模型基础上，用原始数据再进行训练。
-
-- LinkNet 34 + dilated data （20 epochs）
-
-![](predict_result/linknet_dilated_20.png)
-
-- LlinkNet34 + original data （20 epochs）
-
-![](predict_result/linknet_original_20.png)
-
-- D-LinkNet34 + dilated data （20 epochs）
-
-![](predict_result/dlinknet_dilated_20.png)
-
-- D-LlinkNet34 + original data （20 epochs）
-
-  - Still training
+- 训练：[massachusetts-roads-dataset 数据集](https://www.kaggle.com/balraj98/massachusetts-roads-dataset)中表现优良的部分数据，参考 `2021-02-14_data_generator.ipynb`
+  - Step1: 根据道路像素点占比 & 图片完整程度筛选数据
+  - Step2：切分图片
+- 测试：高分一号云南地区图像
 
 
+## 模型
 
-## 有效改动
-
-1. 使用 LinkNet 系列，LinkNet 中 Encoder 部分是直接下载好的 ResNet，本就可以有效提取出一些特征
-2. 使用 Adam 优化器比 SGD，RMSprop  效果更好
-3. D-LinkNet 学习率设置较低才会得到合理结果（0.0002），LinkNet 学习率初始化为 0.001 即可
-
-
-
-## 现有问题
-
-1. 现有模型对分布比较均匀的道路提取效果较好，而若图片有大片背景，模型会提取出很多白点，如何添加正则项改进？
+- 位置：Models 文件夹
+  - LinkNet34
+  - DLinkNet34
+  - FarSegNet
+  - DFarSegNet
 
 
-2. U-Net 仍然无法得到有效的结果，所有像素点预测结果都是 0，sigmoid 后所有像素点结果都是 0.5，loss 很快就固定在了 0.693 不再发生变化
-   1. 怀疑 U-Net 代码出现问题，又找到另外一个版本的 U-Net 代码，但是存在的问题一模一样
-   2. 尝试改变初始学习率，0.001，0.,0002 结果都一样（loss 迅速下降并固定在 0.693，所有像素点预测为 0）
+## Demo
+
+- 参数设置
+
+```{python}
+root_path = 'D:/Data/massachusetts-roads-dataset/'
+road_path = root_path + "tiff_select2_parts_16/"
+INPUT_SIZE, OUTPUT_SIZE = 256, 256
+BATCH_SIZE = 4
+LR = 0.0005
+EPOCH_NUM = 20
+```
+
+- 数据载入
+
+```{python}
+import data_loader
+from torch.utils.data import DataLoader
+
+train_dataset = data_loader.RoadDataset(road_path, INPUT_SIZE, OUTPUT_SIZE, 'train')
+val_dataset = data_loader.RoadDataset(road_path, INPUT_SIZE, OUTPUT_SIZE, 'val')
+
+train_loader = DataLoader(train_dataset, batch_size = BATCH_SIZE, shuffle = True)
+val_loader = DataLoader(val_dataset, batch_size = BATCH_SIZE, shuffle = True)
+```
 
 
+- 模型训练
+> LinkNet34/DLinkNet34 可以使用 solver.py 定义的框架，FarSegNet/DFarSegNet 单独定义对应的训练函数
 
-## 当前计划
+```{python}
+from models import LinkNet34, DLinkNet34, FarSegNet, DFarSegNet
+# import ... # 省略
 
-1. 使用 `cv2` 中的函数尝试去除 D-LinkNet 预测结果中的噪声点
-2. 使用新数据进行测试，选择有代表性的图片手动打标签后可能会再训练
+device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+optimizer = optim.SGD(params = net.parameters(), lr=LR, momentum=0.9, weight_decay=1e-4)
+
+# for LinkNet34/DLinkNet34
+net = model.LinkNet34().to(device)
+criterion = nn.BCEWithLogitsLoss()
+scheduler = optim.lr_scheduler.ReduceLROnPlateau(optimizer, 'min', patience = 5)
+sv = Solver(device, net, train_dataset, val_dataset, criterion, LR, BATCH_SIZE, optimizer, scheduler)
+sv.train(epochs = EPOCH_NUM, save_cp = True, dir_checkpoint = 'checkpoints/', prefix = 'test')
+
+
+# for FarSegNet/DFarSegNet
+net = FarSegNet().to(device)
+writer = SummaryWriter(comment="tensorboard_log{0:%Y-%m-%dT%H-%M-%S/}".format(datetime.now()))
+def update_lr_poly(initial_lr, step, max_step, power):
+    return initial_lr * (1-step/max_step)**power
+
+global_step = 0
+for epoch in range(EPOCH_NUM):
+    net.train()
+    
+    timer, counter = utils.Timer(), utils.Counter()
+    timer.start()
+    for step, (img, label) in enumerate(train_loader):
+        img, label = img.to(device), label.to(device)
+        reader_time = timer.elapsed_time()
+
+        loss, miou = net(img, label)
+        optimizer.zero_grad()
+        loss.backward()
+        optimizer.step()
+        
+        loss = float(loss)
+        batch_time = timer.elapsed_time()
+        counter.append(loss=loss, miou=miou, reader_time=reader_time, batch_time=batch_time)
+        eta = utils.calculate_eta(len(train_loader) - step, counter.batch_time)
+        print(f"[epoch={epoch + 1}/{EPOCH_NUM}] "
+                  f"step={step + 1}/{len(train_loader)} "
+                  f"loss={loss:.4f}/{counter.loss:.4f} "
+                  f"miou={miou:.4f}/{counter.miou:.4f} "
+                  f"batch_time={counter.batch_time:.4f} "
+                  f"reader_time={counter.reader_time:.4f} "
+                  f"| ETA {eta}",
+                  end="\r",
+                  flush=True)
+        if global_step % 200 == 0:
+            writer.add_scalar("Loss", float(loss), global_step=global_step)
+            writer.add_scalar("miou", float(miou), global_step=global_step)
+            writer.add_scalar("learning_rate", optimizer.param_groups[0]['lr'], global_step = global_step)
+            for tag, value in net.named_parameters():
+                tag = tag.replace('.', '/')
+                writer.add_histogram('weights/' + tag, value.data.cpu().numpy(), global_step)
+                try:
+                    writer.add_histogram('grads/' + tag, value.grad.data.cpu().numpy(), global_step)
+                except:
+                    pass
+
+            net.eval()
+            with torch.no_grad():
+                probs, preds = net(img, label)
+            writer.add_images('image', img, global_step)
+            writer.add_images('label/true', label, global_step)
+            writer.add_images('label/pred_0.5', preds, global_step)
+            net.train()
+        global_step += 1
+        writer.flush()
+        
+    print()
+    if epoch % 5 != 0:
+        if os.path.exists('checkpoints/farseg_epoch{}_global_step{}.pth'.format(epoch-4, global_step)):
+            os.remove('checkpoints/farseg_epoch{}_global_step{}.pth'.format(epoch-4, global_step))
+    torch.save(net.state_dict(), 'checkpoints/farseg_epoch{}_global_step{}.pth'.format(epoch+1, global_step))
+    timer.restart()
+    optimizer.param_groups[0]['lr'] = update_lr_poly(LR, epoch, EPOCH_NUM, 0.9)
+```
+
+- 结果输出
+```{python}
+import matplotlib.pyplot as plt
+
+img, lbl = next(iter(train_loader))
+net.eval()
+tt = net(img.cuda(), lbl.cuda())
+
+# plot prediction
+pp = torch.cat([tt[1][0]]*3).permute(1, 2, 0)
+plt.imshow((pp*255).cpu())
+
+# plot label
+lbl_img = torch.cat([lbl[0]]*3).permute(1, 2, 0)
+lbl_img.shape
+plt.imshow(lbl_img)
+```
+
+- 其他
+  - 训练过程可以通过 tensorboard 监控
