@@ -128,7 +128,7 @@ class FarSegNet(nn.Module):
             return self._get_loss(logit, label), self._get_miou(logit, label)
         else:
             probs = torch.sigmoid(logit)
-            preds = (probs > 0.5).int()
+            preds = (probs > 0.5).float()
             return probs, preds
         
     def _get_loss(self, logit, label):
