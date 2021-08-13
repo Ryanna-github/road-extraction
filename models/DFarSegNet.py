@@ -134,10 +134,10 @@ class DFarSegNet(nn.Module):
         p2 = (self.conv_c2(c2) + F.interpolate(p3, scale_factor = 2)) / 2.
         
         # different from farseg
-        z5 = Dblock(p5.shape[1])(self.fs5(p5, u))
-        z4 = Dblock(p4.shape[1])(self.fs4(p4, u))
-        z3 = Dblock(p3.shape[1])(self.fs3(p3, u))
-        z2 = Dblock(p2.shape[1])(self.fs2(p2, u))
+        z5 = Dblock(p5.shape[1]).cuda()(self.fs5(p5, u))
+        z4 = Dblock(p4.shape[1]).cuda()(self.fs4(p4, u))
+        z3 = Dblock(p3.shape[1]).cuda()(self.fs3(p3, u))
+        z2 = Dblock(p2.shape[1]).cuda()(self.fs2(p2, u))
 
         o5 = self.up5(z5)
         o4 = self.up4(z4)

@@ -1,13 +1,12 @@
 # Customized
 data/
 predict_result/test_result/
-runs/
-runs2/
 ossdata/m*
 checkpoints/
 *.pickle
 pickle_objects/
 predict_result/mid_report/
+run*/
 
 
 # Byte-compiled / optimized / DLL files
