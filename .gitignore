@@ -4,8 +4,6 @@ predict_result/test_result/
 ossdata/m*
 checkpoints/
 *.pickle
-pickle_objects/
-predict_result/mid_report/
 run*/
 
 
