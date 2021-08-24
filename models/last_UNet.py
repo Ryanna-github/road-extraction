@@ -12,6 +12,7 @@ class DoubleConv(nn.Module):
     # 输入输出的 feature map 个数可以控制
     # 但是图片具体大小根据图片本身大小决定
     def __init__(self, in_channels, out_channels, mid_channels=None):
+        # super(Model, self).__init__()
         super().__init__()
         if not mid_channels:
             mid_channels = out_channels

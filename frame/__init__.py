@@ -1,6 +1,11 @@
-import torch
-import torchvision
-import torch.nn as nn
-
 import sys
-sys.path.insert(0, "../frame") # Avoid naming conflicts with system files
+sys.path.insert(0, "../") # Avoid naming conflicts with system files
+import frame.dataloader
+import frame.pipeline
+import frame.evaluate
+from frame.config import *
+
+
+# The global variable
+classes = ['background', 'road']
+colormap = [[0 , 0, 0], [255, 255, 255]]
